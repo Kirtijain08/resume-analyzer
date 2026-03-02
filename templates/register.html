@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+
+<div class="glass-card w-100" style="max-width: 500px;">
+
+    <h2 class="text-center mb-4">✨ Create Account</h2>
+
+    <form method="POST">
+
+        <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+
+        <div class="mb-3 text-start">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+
+        <div class="mb-4 text-start">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-custom btn-lg">
+                Register
+            </button>
+        </div>
+
+    </form>
+
+    <p class="text-center mt-4">
+        Already have an account?
+        <a href="/login" class="text-white fw-bold">Login</a>
+    </p>
+
+</div>
+
+{% endblock %}

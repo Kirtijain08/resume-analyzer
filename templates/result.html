@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Analysis Result{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-lg border-0">
+    <div class="card-body p-5">
+
+        <h2 class="text-center mb-4">Resume Analysis Result</h2>
+
+        <!-- Score Section -->
+        <div class="text-center mb-4">
+            <h1 class="display-4 fw-bold" style="color: {{ color }}">
+                {{ final }}%
+            </h1>
+            <p class="fs-5">Performance Level: 
+                <span class="fw-bold">{{ label }}</span>
+            </p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress mb-5" style="height: 25px;">
+            <div class="progress-bar bg-success"
+                 role="progressbar"
+                 style="width: {{ final }}%;"
+                 aria-valuenow="{{ final }}"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                {{ final }}%
+            </div>
+        </div>
+
+        <!-- Score Breakdown -->
+        <div class="row text-center mb-5">
+            <div class="col-md-6">
+                <div class="card bg-light border-0 shadow-sm p-3">
+                    <h5>Semantic Similarity</h5>
+                    <h3 class="text-primary">{{ semantic }}%</h3>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light border-0 shadow-sm p-3">
+                    <h5>Skill Match</h5>
+                    <h3 class="text-success">{{ skill }}%</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matched Skills -->
+        <h4 class="mb-3">Matched Skills</h4>
+        <div class="mb-4">
+            {% for skill in matched %}
+                <span class="badge bg-success me-2 mb-2 p-2">{{ skill }}</span>
+            {% endfor %}
+        </div>
+
+        <!-- Missing Skills -->
+        <h4 class="mb-3">Missing Skills</h4>
+        <div class="mb-4">
+            {% if missing %}
+                {% for skill in missing %}
+                    <span class="badge bg-danger me-2 mb-2 p-2">{{ skill }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="text-success">No missing skills 🎉</span>
+            {% endif %}
+        </div>
+
+        <!-- AI Suggestions -->
+        <h4 class="mb-3">AI Suggestions</h4>
+        <div class="alert alert-info">
+            {{ suggestions }}
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-dark">Analyze Another Resume</a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

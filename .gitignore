@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+instance/
+uploads/
+database.db
+*.dbRemove-Item -Recurse -Force .git
