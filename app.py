@@ -4,10 +4,8 @@ import requests
 from dotenv import load_dotenv
 
 from flask import Flask, render_template, request, redirect, flash
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
-    login_required,
     current_user,
     login_user,
     logout_user
@@ -18,6 +16,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from models import db, User, ResumeReport
+
 
 # -----------------------------
 # App Setup
@@ -36,12 +35,14 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
 # -----------------------------
 # Login Manager
 # -----------------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -52,6 +53,7 @@ def load_user(user_id):
 # HuggingFace Config
 # -----------------------------
 HF_TOKEN = os.getenv("HF_TOKEN")
+
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
 
 headers = {
@@ -77,25 +79,33 @@ def normalize_text(text):
         "ml": "machine learning",
         "ai": "artificial intelligence"
     }
+
     text = text.lower()
+
     for k, v in replacements.items():
         text = text.replace(k, v)
+
     return text
 
 
 def extract_text_from_pdf(pdf_path):
     text = ""
+
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text += page.extract_text() or ""
+
     return text
 
 
 def semantic_similarity(resume, jd):
     documents = [resume, jd]
+
     vectorizer = TfidfVectorizer(stop_words="english")
     tfidf = vectorizer.fit_transform(documents)
+
     score = cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]
+
     return score * 100
 
 
@@ -112,19 +122,24 @@ def skill_match(resume, jd):
     missing = jd_skills - resume_skills
 
     score = (len(matched) / len(jd_skills) * 100) if jd_skills else 0
+
     return score, matched, missing
 
 
 def interpret_score(score):
+
     if score >= 80:
         return "Strong", "green"
+
     elif score >= 60:
         return "Moderate", "orange"
+
     else:
         return "Weak", "red"
 
 
 def generate_ai_suggestions(missing_skills):
+
     if not missing_skills:
         return "No missing skills detected."
 
@@ -156,8 +171,8 @@ Use bullet points.
 
         if isinstance(result, list) and len(result) > 0:
             return result[0].get("generated_text", "No suggestions generated.")
-        else:
-            return "Could not generate suggestions."
+
+        return "Could not generate suggestions."
 
     except Exception:
         return "Error generating AI suggestions."
@@ -172,8 +187,8 @@ def home():
 
 
 @app.route("/analyze", methods=["POST"])
-@login_required
 def analyze():
+
     try:
         jd_text = normalize_text(request.form.get("jd", ""))
 
@@ -189,24 +204,28 @@ def analyze():
         resume_text = extract_text_from_pdf(file_path)
         resume_text = normalize_text(resume_text)
 
-        # Scoring
+        # Scores
         semantic_score = semantic_similarity(resume_text, jd_text)
+
         skill_score, matched, missing = skill_match(resume_text, jd_text)
 
         final_score = (semantic_score * 0.3) + (skill_score * 0.7)
+
         label, color = interpret_score(final_score)
 
         ai_suggestions = generate_ai_suggestions(missing)
 
-        # Save to DB
-        report = ResumeReport(
-            score=int(final_score),
-            feedback=ai_suggestions,
-            user_id=current_user.id
-        )
+        # Save to DB only if user logged in
+        if current_user.is_authenticated:
 
-        db.session.add(report)
-        db.session.commit()
+            report = ResumeReport(
+                score=int(final_score),
+                feedback=ai_suggestions,
+                user_id=current_user.id
+            )
+
+            db.session.add(report)
+            db.session.commit()
 
         return render_template(
             "result.html",
@@ -226,20 +245,27 @@ def analyze():
 
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
+
+    if not current_user.is_authenticated:
+        return redirect("/login")
+
     reports = ResumeReport.query.filter_by(user_id=current_user.id).all()
+
     return render_template("dashboard.html", reports=reports)
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+
     if request.method == "POST":
+
         username = request.form["username"]
         email = request.form["email"]
         password = request.form["password"]
 
         existing_user = User.query.filter_by(email=email).first()
+
         if existing_user:
             flash("Email already registered!", "danger")
             return redirect("/register")
@@ -256,6 +282,7 @@ def register():
         db.session.commit()
 
         flash("Registration successful! Please login.", "success")
+
         return redirect("/login")
 
     return render_template("register.html")
@@ -263,16 +290,22 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
+
         email = request.form["email"]
         password = request.form["password"]
 
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
+
             login_user(user)
+
             flash("Login successful!", "success")
+
             return redirect("/dashboard")
+
         else:
             flash("Invalid email or password!", "danger")
             return redirect("/login")
@@ -281,9 +314,10 @@ def login():
 
 
 @app.route("/logout")
-@login_required
 def logout():
+
     logout_user()
+
     return redirect("/login")
 
 
